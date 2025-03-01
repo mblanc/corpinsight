@@ -1,101 +1,121 @@
-import Image from "next/image";
+"use client"
+
+import { useState } from "react"
+import { SearchForm } from "@/components/search-form"
+import { ResearchResults } from "@/components/research-results"
+import { KnowledgeGraph } from "@/components/knowledge-graph"
+import { ResearchProgress } from "@/components/research-progress"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import type { CompanyData } from "@/types/company"
+import { Toaster } from "@/components/ui/toaster"
+import { useToast } from "@/components/ui/use-toast"
+import Test from "@/components/test"
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [isLoading, setIsLoading] = useState(false)
+  const [progress, setProgress] = useState<string[]>([])
+  const [companyData, setCompanyData] = useState<CompanyData | null>(null)
+  const { toast } = useToast()
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleSearch = async (companyName: string, location?: string) => {
+    setIsLoading(true)
+    setProgress([])
+    setCompanyData(null)
+
+    try {
+      // Set up SSE for progress updates
+      const eventSource = new EventSource(`/api/research/progress?company=${encodeURIComponent(companyName)}`)
+
+      eventSource.onmessage = (event) => {
+        console.log("EVENT")
+        const data = JSON.parse(event.data)
+        console.log(data)
+        if (data.progress) {
+          setProgress((prev) => [...prev, data.progress])
+        }
+      }
+
+      eventSource.onerror = () => {
+        eventSource.close()
+      }
+
+      // Make the actual research request using GET
+      const queryParams = new URLSearchParams({
+        companyName: companyName,
+      })
+
+      // Only add location to queryParams if it's provided and not an empty string
+      if (location && location.trim() !== "") {
+        queryParams.append("location", location.trim())
+      }
+
+      const response = await fetch(`/api/research?${queryParams.toString()}`, {
+        method: "GET",
+      })
+
+      console.log("Search done")
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error("API Error Response:", errorText)
+        throw new Error(`Failed to research company: ${response.status} ${response.statusText}`)
+      }
+
+      const contentType = response.headers.get("content-type")
+      console.log(contentType)
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text()
+        console.error("Unexpected response format:", text)
+        throw new Error("Server responded with non-JSON content")
+      }
+
+      const data = await response.json()
+      setCompanyData(data)
+      eventSource.close()
+    } catch (error) {
+      console.error("Error researching company:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to research company. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <main className="container mx-auto py-8 px-4">
+      <Test />
+      <h1 className="text-3xl font-bold text-center mb-8">CorpInsight: Company Research Agent</h1>
+
+      <div className="mb-8">
+        <SearchForm onSearch={handleSearch} isLoading={isLoading} />
+      </div>
+
+      {isLoading && progress.length > 0 && (
+        <div className="mb-8">
+          <ResearchProgress progress={progress} />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+      )}
+
+      {companyData && (
+        <Tabs defaultValue="summary" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="summary">Summary</TabsTrigger>
+            <TabsTrigger value="graph">Knowledge Graph</TabsTrigger>
+          </TabsList>
+          <TabsContent value="summary" className="mt-4">
+            <ResearchResults companyData={companyData} />
+          </TabsContent>
+          <TabsContent value="graph" className="mt-4">
+            <KnowledgeGraph graphData={companyData.knowledgeGraph} />
+          </TabsContent>
+        </Tabs>
+      )}
+
+      <Toaster />
+    </main>
+  )
 }
+
