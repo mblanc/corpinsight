@@ -1,18 +1,13 @@
 import { generateText } from "ai"
 import { createVertex } from '@ai-sdk/google-vertex';
+import type { SearchResult } from "@/types/search"
 
 const vertex = createVertex({
-  project: 'my-first-project-199607', // optional
-  location: 'us-central1', // optional
+  project: process.env.PROJECT_ID,
+  location: process.env.LOCATION,
 });
 
 const MODEL_ID = "gemini-2.0-flash-001"
-
-interface SearchResult {
-  url: string
-  title: string
-  snippet: string
-}
 
 interface Entity {
   id: string
@@ -40,14 +35,17 @@ export async function extractInformation(
   companyName: string,
 ): Promise<ExtractionResult> {
   // Prepare the search results for the prompt
-  const formattedResults = searchResults
-    .map((result, index) => {
-      return `Result ${index + 1}:
-URL: ${result.url}
-Title: ${result.title}
-Snippet: ${result.snippet}`
-    })
-    .join("\n\n")
+  //   const formattedResults = searchResults
+  //     .map((result, index) => {
+  //       return `Result ${index + 1}:
+  // URL: ${result.url}
+  // Title: ${result.title}
+  // Snippet: ${result.snippet}`
+  //     })
+  //     .join("\n\n")
+
+  const formattedResults = searchResults.map(result => result.text).join("\n\n")
+
 
   try {
     // Use the LLM to extract entities and relationships
@@ -128,17 +126,17 @@ Snippet: ${result.snippet}`
       ]
 
       // Try to extract some basic information from search results
-      searchResults.forEach((result, index) => {
-        if (result.title.includes(companyName)) {
-          fallbackEntities.push({
-            id: `source-${index}`,
-            name: result.title,
-            type: "Other",
-            description: result.snippet,
-            url: result.url,
-          })
-        }
-      })
+      // searchResults.forEach((result, index) => {
+      //   if (result.title.includes(companyName)) {
+      //     fallbackEntities.push({
+      //       id: `source-${index}`,
+      //       name: result.title,
+      //       type: "Other",
+      //       description: result.snippet,
+      //       url: result.url,
+      //     })
+      //   }
+      // })
 
       return {
         entities: fallbackEntities,

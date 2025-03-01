@@ -9,8 +9,8 @@ import type { SearchResult } from "@/types/search"
 
 
 const vertex = createVertex({
-  project: 'my-first-project-199607', // optional
-  location: 'us-central1', // optional
+  project: process.env.PROJECT_ID,
+  location: process.env.LOCATION,
 });
 
 const MODEL_ID = "gemini-2.0-flash-001"
@@ -30,7 +30,11 @@ export async function researchCompany(
   let summary = ""
   let redFlags: string[] = []
   let structuredEntities: { [key: string]: any[] } = {}
-  let sources: { url: string; title: string; description: string }[] = []
+  let sources: {
+    uri: string,
+    title: string,
+  }[] = []
+  let searchEntryPoints: string[] = []
   let knowledgeGraph: GraphData = { nodes: [], edges: [] }
 
   try {
@@ -82,11 +86,8 @@ export async function researchCompany(
     redFlags = summaryResult.redFlags
     structuredEntities = summaryResult.structuredEntities
 
-    sources = [...initialResults, ...followUpResults].flat().map((result) => ({
-      url: result.url,
-      title: result.title,
-      description: result.snippet,
-    }))
+    sources = [...initialResults, ...followUpResults].flat().flatMap((result) => result.chunks)
+    searchEntryPoints = [...initialResults, ...followUpResults].flat().flatMap((result) => result.searchEntryPoint)
   } catch (error) {
     console.error("Error in research process:", error)
     summary = `An error occurred while researching ${companyName}. Some information may be incomplete.`
@@ -100,6 +101,7 @@ export async function researchCompany(
     entities: structuredEntities,
     redFlags,
     sources,
+    searchEntryPoints,
     knowledgeGraph,
   }
 }

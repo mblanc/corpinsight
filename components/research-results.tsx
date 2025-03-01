@@ -8,7 +8,7 @@ interface ResearchResultsProps {
 }
 
 export function ResearchResults({ companyData }: ResearchResultsProps) {
-  const { summary, entities, redFlags, sources } = companyData
+  const { summary, entities, redFlags, sources, searchEntryPoints } = companyData
 
   return (
     <div className="space-y-6">
@@ -84,18 +84,30 @@ export function ResearchResults({ companyData }: ResearchResultsProps) {
             {sources.map((source, index) => (
               <li key={index}>
                 <a
-                  href={source.url}
+                  href={source.uri}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-500 hover:underline flex items-center"
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
-                  {source.title || source.url}
+                  {source.title}
                 </a>
-                {source.description && <p className="text-sm text-muted-foreground ml-6">{source.description}</p>}
               </li>
             ))}
           </ul>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Searches</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div  className="space-y-2 w-full">
+            {searchEntryPoints?.map((searchEntryPoint, index) => (
+              <div dangerouslySetInnerHTML={{ __html: searchEntryPoint.replaceAll("container", "container2") }}></div>
+            ))}
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { CompanyData } from "@/types/company"
 import { Toaster } from "@/components/ui/toaster"
 import { useToast } from "@/components/ui/use-toast"
-import Test from "@/components/test"
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false)
@@ -86,7 +85,6 @@ export default function Home() {
 
   return (
     <main className="container mx-auto py-8 px-4">
-      <Test />
       <h1 className="text-3xl font-bold text-center mb-8">CorpInsight: Company Research Agent</h1>
 
       <div className="mb-8">

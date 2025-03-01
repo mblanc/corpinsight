@@ -7,9 +7,8 @@ export interface EntityItem {
 }
 
 export interface Source {
-  url: string
-  title?: string
-  description?: string
+  uri: string
+  title: string
 }
 
 export interface GraphNode {
@@ -40,6 +39,7 @@ export interface CompanyData {
   }
   redFlags?: string[]
   sources: Source[]
+  searchEntryPoints: string[]
   knowledgeGraph: GraphData
 }
 

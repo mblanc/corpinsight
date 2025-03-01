@@ -1,6 +1,8 @@
 export interface SearchResult {
-  url: string
-  title: string
-  snippet: string
+  text: string
+  chunks:  {
+    uri: string,
+    title: string,
+  }[]
+  searchEntryPoint: string
 }
-
