@@ -26,8 +26,8 @@ export async function searchCompany(query: string): Promise<SearchResult> {
       | GoogleGenerativeAIProviderMetadata
       | undefined;
     const groundingMetadata = metadata?.groundingMetadata;
-    console.log("GROUNDING METADATA")
-    console.log(JSON.stringify(groundingMetadata?.groundingChunks))
+    // console.log("GROUNDING METADATA")
+    // console.log(JSON.stringify(groundingMetadata?.groundingChunks))
 
 
     const searchEntryPoint = groundingMetadata?.searchEntryPoint?.renderedContent ?? ""

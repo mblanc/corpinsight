@@ -85,7 +85,7 @@ export default function Home() {
 
   return (
     <main className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold text-center mb-8">CorpInsight: Company Research Agent</h1>
+      <h1 className="text-3xl font-bold text-center mb-8">CorpInsight</h1>
 
       <div className="mb-8">
         <SearchForm onSearch={handleSearch} isLoading={isLoading} />

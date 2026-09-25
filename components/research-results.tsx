@@ -64,6 +64,16 @@ export function ResearchResults({ companyData }: ResearchResultsProps) {
                               {item.url}
                             </a>
                           )}
+                          {item.former_companies && (
+                            <>
+                            <span>Past companies</span>
+                            <ul>
+                              {item.former_companies.map((relatedItem, index) => (
+                                <li key={index}>{relatedItem}</li>
+                              ))}
+                            </ul>
+                            </>
+                          )}
                         </div>
                       </li>
                     ))}

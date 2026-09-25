@@ -4,6 +4,7 @@ export interface EntityItem {
   description?: string
   url?: string
   type?: string
+  former_companies?: string[]
 }
 
 export interface Source {

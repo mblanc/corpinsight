@@ -68,11 +68,38 @@ export async function researchCompany(
     updateProgress("Extracting additional information...")
     const additionalExtraction = await extractInformation(followUpResults.flat(), companyName)
 
+
+    // Add this new block to handle executive history research
+    const executiveHistoryResults: SearchResult[] = []
+    updateProgress("Researching executive history...")
+    const personEntities = initialExtraction.entities.filter(entity => entity.type === "Person");
+
+    const searchPromises = personEntities.map(async (entity) => {
+      const executiveName = entity.name;
+      try {
+        const searchResults = await searchCompany(`list all companies this person: ${executiveName} worked for`);
+        return searchResults;
+      } catch (searchError) {
+        console.error(`Error searching for past companies of ${executiveName}:`, searchError);
+        updateProgress(`Encountered an error while researching past companies of ${executiveName}.`);
+        // Return null or an empty SearchResult to maintain array length.
+        return null; // Or: return { results: [] };
+      }
+    });
+
+    const results = await Promise.all(searchPromises);
+
+    // Filter out any null or empty results that occurred due to errors.
+    executiveHistoryResults.push(...results.filter(result => result !== null) as SearchResult[]);
+
+    updateProgress("Extracting information on executive history...")
+    const executiveHistoryExtraction = await extractInformation(executiveHistoryResults, companyName);
+    
     updateProgress("Building knowledge graph...")
     knowledgeGraph = await buildKnowledgeGraph(
       companyName,
-      [...initialExtraction.entities, ...additionalExtraction.entities],
-      [...initialExtraction.relationships, ...additionalExtraction.relationships],
+      [...initialExtraction.entities, ...additionalExtraction.entities, ...executiveHistoryExtraction.entities],
+      [...initialExtraction.relationships, ...additionalExtraction.relationships, ...executiveHistoryExtraction.relationships],
     )
 
     updateProgress("Generating summary and identifying potential red flags...")
@@ -85,6 +112,8 @@ export async function researchCompany(
     summary = summaryResult.summary
     redFlags = summaryResult.redFlags
     structuredEntities = summaryResult.structuredEntities
+    console.log('SUMMARY!')
+    console.log(JSON.stringify(summaryResult.structuredEntities, null, 2))
 
     sources = [...initialResults, ...followUpResults].flat().flatMap((result) => result.chunks)
     searchEntryPoints = [...initialResults, ...followUpResults].flat().flatMap((result) => result.searchEntryPoint)
@@ -111,8 +140,7 @@ async function generateInitialQueries(companyName: string, location?: string): P
     const { text } = await generateText({
       model: vertex(MODEL_ID),
       prompt: `
-        Generate 3-5 search queries to gather comprehensive information about the company "${companyName}"${
-          location ? ` located in ${location}` : ""
+        Generate 3-5 search queries to gather comprehensive information about the company "${companyName}"${location ? ` located in ${location}` : ""
         }.
 
         The date is ${new Date()}
@@ -236,7 +264,7 @@ async function generateSummary(
           "redFlags": ["Red flag 1", "Red flag 2", ...],
           "structuredEntities": {
             "executives": [
-              { "name": "Name", "description": "Role and background", "url": "Optional URL" },
+              { "name": "Name", "description": "Role and background", "former_companies": [...]  },
               ...
             ],
             "products": [...],

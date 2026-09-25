@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
       // Start the research process
       const companyData = await researchCompany(companyName, location || undefined, sessionId)
 
-      console.log(companyData)
+      // console.log(companyData)
       // Clean up progress tracking
       progressStore.clearSession(sessionId)
 
